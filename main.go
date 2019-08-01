@@ -27,10 +27,10 @@ const (
 	_VERSION = "1.0.0 rc1"
 )
 
-var gitCommit string
 var GitBranch string
 var Version string
 var BuildDate string
+var GitID string
 
 // input values
 type Options struct {
@@ -190,8 +190,7 @@ func grep_file(filename string, pattern *regexp.Regexp) []line {
 }
 
 func usage(err error) {
-	//fmt.Println("build: %v %v %v %v", Version, gitCommit, GitBranch , BuildDate)
-	fmt.Printf("\n%s Version: %v %v %v %v\n", filepath.Base(os.Args[0]), Version, gitCommit, GitBranch, BuildDate)
+	fmt.Printf("\n%s Version: %v %v %v %v\n", filepath.Base(os.Args[0]), Version, GitID, GitBranch, BuildDate)
 	fmt.Printf("Usage: %v \"regex PATTERN\" [directory] [extension]\n\n", filepath.Base(os.Args[0]))
 	if err != nil {
 		fmt.Println(err)
@@ -264,5 +263,10 @@ func main() {
 		go run ggrep.go "python" ~/.cache/
 
 	make:
-		go build  -ldflags "-s -w" ggrep.go && upx ggrep
+		go build -ldflags "-s -w
+			-X main.GitID=$(git rev-parse --short HEAD 2>/dev/null) \
+			-X main.GitBranch=$(git branch --show-current 2>/dev/null) \
+			-X main.Version=${version} \
+			-X main.BuildDate=$(date +%F)" \
+			-o ggrep && upx ggrep
 */
