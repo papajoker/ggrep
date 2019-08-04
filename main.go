@@ -37,9 +37,9 @@ var GitID string
 
 // input values
 type Options struct {
-	mime, help, binError, timer   bool
-	sort, directory, pattern, ext string
-	limit                         uint64
+	mime, help, binError, timer, usecase bool
+	sort, directory, pattern, ext        string
+	limit                                uint64
 }
 
 // parse console input values
@@ -106,13 +106,19 @@ func argsParser() (Options, error) {
 				ret.mime = true
 			case 't':
 				ret.timer = true
+			case 'c':
+				ret.usecase = true
 			case 's':
 				ret.sort = "size"
 			}
 		}
 	}
-	if len(ret.pattern) < 3 {
+	if len(ret.pattern) < 3 && !ret.help {
 		return ret, errors.New("console value: regex pattern too short")
+	}
+	if !ret.usecase {
+		// by default, case-insensitive
+		ret.pattern = "(?i)" + ret.pattern
 	}
 	if ret.directory == "" {
 		ret.directory, _ = os.Getwd()
@@ -145,7 +151,7 @@ func main() {
 	dir, _ := filepath.Abs(options.directory)
 	fmt.Println("::", dir)
 
-	pattern, err := regexp.Compile(options.pattern)
+	pattern, err := regexp.Compile(options.pattern) // ignore Case
 	if err != nil {
 		usage(err, &options)
 	}
@@ -295,8 +301,9 @@ func usage(err error, options *Options) {
 	if Version != "" {
 		fmt.Printf("\n%s Version: %v %v %v %v\n", filepath.Base(os.Args[0]), Version, GitID, GitBranch, BuildDate)
 	}
-	fmt.Printf("Usage: %v \"regex PATTERN\" [directory] [extension]\n\n", filepath.Base(os.Args[0]))
-	fmt.Printf("env GGREPLIMIT=%v (allowed to run concurrently)\n", options.limit)
+	fmt.Printf("Usage: %v \"regex PATTERN\" [directory] [extension]\n", filepath.Base(os.Args[0]))
+	fmt.Println("\t-c : Case sensitive")
+	fmt.Printf("\nenv GGREPLIMIT=%v (allowed to run concurrently)\n", options.limit)
 	if err != nil {
 		fmt.Println("\n", err)
 		os.Exit(1)
